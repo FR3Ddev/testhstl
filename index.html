@@ -307,6 +307,16 @@
       if (savedData) {
         try {
           recruitmentData = JSON.parse(savedData);
+          
+          // Fix any existing data that might not have proper types
+          recruitmentData = recruitmentData.map(item => {
+            return {
+              id: item.id || Date.now(),
+              hstlMember: String(item.hstlMember || ""),
+              recruitedMember: String(item.recruitedMember || ""),
+              paidOut: String(item.paidOut || "Pending")
+            };
+          });
         } catch (e) {
           console.error("Error loading data:", e);
           recruitmentData = [];
@@ -329,8 +339,8 @@
       
       // Filter data based on search term
       const filteredData = recruitmentData.filter(item => 
-        item.hstlMember.toLowerCase().includes(searchTerm) || 
-        item.recruitedMember.toLowerCase().includes(searchTerm)
+        String(item.hstlMember).toLowerCase().includes(searchTerm) || 
+        String(item.recruitedMember).toLowerCase().includes(searchTerm)
       );
       
       // Display filtered data
@@ -350,7 +360,8 @@
         // Paid Out status cell
         const paidOutCell = document.createElement('td');
         const statusIndicator = document.createElement('span');
-        statusIndicator.className = `status-indicator status-${item.paidOut.toLowerCase()}`;
+        const statusClass = String(item.paidOut).toLowerCase() === 'paid' ? 'status-paid' : 'status-pending';
+        statusIndicator.className = `status-indicator ${statusClass}`;
         paidOutCell.appendChild(statusIndicator);
         paidOutCell.appendChild(document.createTextNode(item.paidOut));
         row.appendChild(paidOutCell);
@@ -360,7 +371,7 @@
           const actionsCell = document.createElement('td');
           actionsCell.className = 'action-buttons';
           
-          if (item.paidOut === 'Pending') {
+          if (String(item.paidOut).toLowerCase() === 'pending') {
             const markPaidBtn = document.createElement('button');
             markPaidBtn.textContent = 'Mark Paid';
             markPaidBtn.onclick = () => updatePaidStatus(item.id, 'Paid');

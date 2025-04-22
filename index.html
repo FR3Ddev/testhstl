@@ -24,6 +24,7 @@
       padding: 25px;
       border-radius: 10px;
       box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
     }
     
     .form-group {
@@ -36,7 +37,7 @@
       font-weight: bold;
     }
     
-    input[type="text"], input[type="password"] {
+    input[type="text"], input[type="password"], select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
@@ -164,7 +165,7 @@
           </div>
           <div class="form-group">
             <label for="paid-status">Paid Out:</label>
-            <select id="paid-status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            <select id="paid-status">
               <option value="Pending">Pending</option>
               <option value="Paid">Paid</option>
             </select>
@@ -275,6 +276,9 @@
       document.getElementById('hstl-member').value = '';
       document.getElementById('recruited-member').value = '';
       document.getElementById('paid-status').value = 'Pending';
+      
+      console.log("Entry added:", newEntry);
+      console.log("Current data:", recruitmentData);
     }
     
     function updatePaidStatus(id, status) {
@@ -301,31 +305,49 @@
     function loadData() {
       const savedData = localStorage.getItem('hstlRecruitmentData');
       if (savedData) {
-        recruitmentData = JSON.parse(savedData);
+        try {
+          recruitmentData = JSON.parse(savedData);
+        } catch (e) {
+          console.error("Error loading data:", e);
+          recruitmentData = [];
+        }
       }
     }
     
     function refreshTable() {
       const tableBody = document.getElementById('recruitment-data');
+      const actionsHeader = document.getElementById('actions-header');
+      
+      // Make sure actions column is correctly displayed/hidden
+      actionsHeader.style.display = isAdmin ? 'table-cell' : 'none';
+      
+      // Clear the table
       tableBody.innerHTML = '';
       
+      // Get search term
       const searchTerm = document.getElementById('search').value.toLowerCase();
+      
+      // Filter data based on search term
       const filteredData = recruitmentData.filter(item => 
         item.hstlMember.toLowerCase().includes(searchTerm) || 
         item.recruitedMember.toLowerCase().includes(searchTerm)
       );
       
+      // Display filtered data
       filteredData.forEach(item => {
         const row = document.createElement('tr');
         
+        // HSTL Member cell
         const hstlMemberCell = document.createElement('td');
         hstlMemberCell.textContent = item.hstlMember;
         row.appendChild(hstlMemberCell);
         
+        // Recruited Member cell
         const recruitedMemberCell = document.createElement('td');
         recruitedMemberCell.textContent = item.recruitedMember;
         row.appendChild(recruitedMemberCell);
         
+        // Paid Out status cell
         const paidOutCell = document.createElement('td');
         const statusIndicator = document.createElement('span');
         statusIndicator.className = `status-indicator status-${item.paidOut.toLowerCase()}`;
@@ -333,6 +355,7 @@
         paidOutCell.appendChild(document.createTextNode(item.paidOut));
         row.appendChild(paidOutCell);
         
+        // Actions cell (only for admin)
         if (isAdmin) {
           const actionsCell = document.createElement('td');
           actionsCell.className = 'action-buttons';

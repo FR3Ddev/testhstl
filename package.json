@@ -1,0 +1,17 @@
+{
+  "name": "hstl-tracker",
+  "version": "1.0.0",
+  "description": "HSTL Recruitment Bonus Tracker",
+  "main": "index.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.3.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.5.1"
+  }
+}

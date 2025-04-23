@@ -361,7 +361,7 @@
         const paidOutCell = document.createElement('td');
         const statusIndicator = document.createElement('span');
         const statusClass = String(item.paidOut).toLowerCase() === 'paid' ? 'status-paid' : 'status-pending';
-        statusIndicator.className = status-indicator ${statusClass};
+        statusIndicator.className = `status-indicator ${statusClass}`;
         paidOutCell.appendChild(statusIndicator);
         paidOutCell.appendChild(document.createTextNode(item.paidOut));
         row.appendChild(paidOutCell);

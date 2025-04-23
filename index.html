@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HSTL Recruitment Tracker</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>HSTL Recruitment Bonus Tracker</h1>
+    
+    <div id="login-section">
+      <h2>Admin Login</h2>
+      <input type="password" id="password" placeholder="Enter password">
+      <button onclick="login()">Login</button>
+      <button onclick="viewAsGuest()">View Only</button>
+    </div>
+    
+    <div id="admin-section" style="display:none;">
+      <h2>Add New Recruitment</h2>
+      <input type="text" id="hstl-member" placeholder="HSTL Member">
+      <input type="text" id="recruited-member" placeholder="Recruited Member">
+      <select id="paid-status">
+        <option value="Pending">Pending</option>
+        <option value="Paid">Paid</option>
+      </select>
+      <button onclick="addRecruitment()">Add Entry</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+    
+    <div class="search">
+      <input type="text" id="search" placeholder="Search..." oninput="filterData()">
+    </div>
+    
+    <table id="recruitment-table">
+      <thead>
+        <tr>
+          <th>HSTL Member</th>
+          <th>Recruited Member</th>
+          <th>Status</th>
+          <th id="actions-header" style="display:none;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="data-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Configuration
+    const API_URL = '/api';
+    let isAdmin = false;
+    let allData = [];
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchData();
+    });
+    
+    // Authentication
+    async function login() {
+      const password = document.getElementById('password').value;
+      try {
+        const response = await axios.post(`${API_URL}/login`, { password });
+        if (response.data.success) {
+          isAdmin = true;
+          document.getElementById('login-section').style.display = 'none';
+          document.getElementById('admin-section').style.display = 'block';
+          document.getElementById('actions-header').style.display = 'table-cell';
+          fetchData();
+        } else {
+          alert('Wrong password');
+        }
+      } catch (error) {
+        alert('Login failed');
+      }
+    }
+    
+    function viewAsGuest() {
+      isAdmin = false;
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('actions-header').style.display = 'none';
+    }
+    
+    function logout() {
+      isAdmin = false;
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('admin-section').style.display = 'none';
+      document.getElementById('actions-header').style.display = 'none';
+    }
+    
+    // Data Operations
+    async function fetchData() {
+      try {
+        const response = await axios.get(`${API_URL}/recruitments`);
+        allData = response.data;
+        renderData(allData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    }
+    
+    async function addRecruitment() {
+      const hstlMember = document.getElementById('hstl-member').value;
+      const recruitedMember = document.getElementById('recruited-member').value;
+      const paidOut = document.getElementById('paid-status').value;
+      
+      if (!hstlMember || !recruitedMember) {
+        alert('Please fill all fields');
+        return;
+      }
+      
+      try {
+        await axios.post(`${API_URL}/recruitments`, {
+          hstlMember,
+          recruitedMember,
+          paidOut
+        });
+        fetchData();
+        document.getElementById('hstl-member').value = '';
+        document.getElementById('recruited-member').value = '';
+      } catch (error) {
+        alert('Failed to add record');
+      }
+    }
+    
+    async function updateStatus(id, status) {
+      try {
+        await axios.put(`${API_URL}/recruitments`, { id, status });
+        fetchData();
+      } catch (error) {
+        alert('Failed to update status');
+      }
+    }
+    
+    async function deleteRecord(id) {
+      if (confirm('Are you sure?')) {
+        try {
+          await axios.delete(`${API_URL}/recruitments`, { data: { id } });
+          fetchData();
+        } catch (error) {
+          alert('Failed to delete record');
+        }
+      }
+    }
+    
+    // Rendering
+    function renderData(data) {
+      const tbody = document.getElementById('data-body');
+      tbody.innerHTML = '';
+      
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+          <td>${item.hstlMember}</td>
+          <td>${item.recruitedMember}</td>
+          <td class="status-${item.paidOut.toLowerCase()}">${item.paidOut}</td>
+          ${isAdmin ? `
+            <td class="actions">
+              ${item.paidOut === 'Pending' ? 
+                `<button onclick="updateStatus('${item._id}', 'Paid')">Mark Paid</button>` : 
+                `<button onclick="updateStatus('${item._id}', 'Pending')">Mark Pending</button>`}
+              <button onclick="deleteRecord('${item._id}')">Delete</button>
+            </td>
+          ` : ''}
+        `;
+        
+        tbody.appendChild(row);
+      });
+    }
+    
+    function filterData() {
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      const filtered = allData.filter(item => 
+        item.hstlMember.toLowerCase().includes(searchTerm) || 
+        item.recruitedMember.toLowerCase().includes(searchTerm)
+      );
+      renderData(filtered);
+    }
+  </script>
+</body>
+</html>
